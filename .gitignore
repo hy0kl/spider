@@ -1,0 +1,7 @@
+*.o
+*~
+*.swp
+*.swo
+*.dSYM
+a.out
+tags

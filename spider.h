@@ -7,6 +7,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/queue.h>
@@ -28,6 +29,12 @@
 #include <err.h>
 #include <getopt.h>
 
+#include <lua.h>
+#include <lualib.h>
+#include <lauxlib.h>
+
+#define _DEBUG  1
+
 #define DEFAULT_PROXY_PATH          "./conf/proxy.txt"
 #define DEFAULT_PROXY_SITEID_PATH   "./conf/proxy_siteid.txt"
 #define DEFAULT_MAX_PROXY_IP_NUM    1000
@@ -40,11 +47,11 @@
 #define CHECK_PROXY_FILE_INTERVAL   60
 #define DEFAULT_PROXY_MAX_FAIL_TIME 30
 
-#define DEFAULT_WORK_THREAD_NUM     4 
+#define DEFAULT_WORK_THREAD_NUM     2
 
 #define DEFAULT_CONNECT_TIMEOUT 7   // sec
 #define DEFAULT_READ_TIMEOUT    10
-#define DEFAULT_WRITE_TIMEOUT   20 
+#define DEFAULT_WRITE_TIMEOUT   20
 #define DEFAULT_PROXY_CONNECT_TIMEOUT   15
 #define DEFAULT_PROXY_READ_TIMEOUT      20
 #define DEFAULT_PROXY_WRITE_TIMEOUT     40
@@ -55,7 +62,8 @@
 #define DEFAULT_LOG_SIZE    500000
 
 #define MAX_STATUS_LEN  20 // 表示状态的字符串的最大长度
-#define PROJECT_NAME    "spider"
+#define PACKAGE         "spider"
+#define VERSION         "0.1.0"
 
 #define SPIDER_METHOD_GET   "get"
 #define SPIDER_METHOD_POST  "post"
@@ -86,6 +94,8 @@
 #define TMP_STR_BUF_LEN 1024 * 20
 #define DEFAULT_LINK_LENGTH 1024
 
+#define logprintf(format, arg...) fprintf(stderr, "[NOTICE]%s:%d:%s "format"\n", __FILE__, __LINE__, __func__, ##arg)
+
 #if defined(__DATE__) && defined(__TIME__)
 static const char build_date[] = __DATE__ " " __TIME__;
 #else
@@ -100,9 +110,10 @@ typedef long unsigned int indext_t;
 typedef struct _task_queue_t
 {
     task_t task_id;
+    task_t task_pid;    /** parent tid */
     short http_version;      // HTTP的版本，1为HTTP/1.1，0为HTTP/1.0
     short method;    // 抓取的方法，1: POST, 0: GET
-    
+
     char url[MAX_URL_LEN];  // 目标url
     // char x_flash_version[MAX_X_FLASH_VERSION_LEN];
     char cookie[MAX_COOKIE_LEN];
@@ -111,6 +122,19 @@ typedef struct _task_queue_t
 
     int module;
     int callback_index;
+
+    /**
+     * 抓取内容的类型
+     * 0: 纯文本,包括 html, html,js,统一为 txt,默认类型
+     * 1: 媒体类型,例如 img, mp3, swf...
+     * */
+    int media_type;
+    /**
+     * 抽取数据的类型标志位
+     * 0: 抽取 url,默认的抽取行为
+     * 1: 抽取特定的文本数据
+     * */
+    int extract_type;
 
     struct _task_queue_t *next;
 } task_queue_t;
@@ -131,13 +155,36 @@ typedef struct _module_callback_t
     callback_t *callback;
 } module_callback_t;
 
-typedef struct _gconf_t
+typedef struct _module_config_t
+{
+    short  count;
+    char **module_array;
+} module_config_t;
+
+typedef struct _config_t
 {
     char prefix[FILENAME_MAX_LEN];  /** 程序工作的绝对路径,必须指定 */
     char log_name[FILENAME_MAX_LEN];    /** $prefix/log/spider.log */
     int  log_level;
+    int  log_size;
+    int  do_daemonize;
+    /** dir modulo magic number */
+    int  dir_magic_number;
+    /** threads number config */
+    int  download_thread_number;
+    int  extract_thread_number;
 
-} gconf_t;
+    /**
+     * url 相对于文本的密度
+     * 当大于设定的阀值时,认为抽取类型为抽取特定文本数据
+     * */
+    float url_density;
+
+    /** 模块配置项目 */
+    module_config_t module_config;
+} config_t;
+
+extern config_t gconfig;
 
 #endif
 

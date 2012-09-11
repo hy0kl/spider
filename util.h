@@ -45,5 +45,16 @@ int cut_str(const char *src,
  * */
 int prefix_cmp(const char *prefix, const char *cmp_str);
 
+/**
+ * 自定义 lua 出错函数
+ * 主要功能在于有 pop 操作
+ * */
+void lua_ext_error(lua_State *L);
+
+/**
+ * 从 lua 脚本里面取得配置值
+ * */
+int get_field(lua_State *L, const char *key, void *dest, const size_t size);
+
 #endif
 

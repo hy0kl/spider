@@ -460,3 +460,56 @@ int prefix_cmp(const char *prefix, const char *cmp_str)
 FINISH:
     return ret;
 }
+
+void lua_ext_error(lua_State *L)
+{
+    fprintf(stderr, "%s\n", lua_tostring(L, -1));
+    /** pop error message from the stack */
+    lua_pop(L, 1);
+
+    return;
+}
+
+int get_field(lua_State *L, const char *key, void *dest, const size_t size)
+{
+    assert(NULL != dest);
+    assert(size > 0);
+
+    int result = -1;
+
+    int  t;
+    int  number = 0;
+    char tmp_str[FILENAME_MAX_LEN];
+
+    lua_pushstring(L, key);
+    lua_gettable(L, -2);
+
+    t = lua_type(L, -1);
+    switch (t)
+    {
+    case LUA_TSTRING:   /** strings */
+        snprintf(tmp_str, sizeof(tmp_str), "%s", lua_tostring(L, -1));
+        memmove(dest, tmp_str, size);
+        break;
+
+    case LUA_TBOOLEAN:  /** booleans */
+        printf("bool: %s\n", lua_toboolean(L, -1) ? "true" : "false");
+        break;
+
+    case LUA_TNUMBER:   /** numbers */
+        number = (int)lua_tonumber(L, -1);
+        memmove(dest, &number, size);
+        break;
+
+    default:    /** other values */
+        lua_ext_error(L);
+        goto FINISH;
+    }
+
+    lua_pop(L, 1);
+     result = 0;
+
+FINISH:
+    return result;
+}
+

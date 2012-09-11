@@ -1,5 +1,4 @@
 LIBDIR = \
-		-levent \
 		-llua \
 		-lm
 

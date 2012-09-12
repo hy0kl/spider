@@ -1,5 +1,6 @@
 LIBDIR = \
 		-llua \
+		-lcrypto \
 		-lm
 
 GCC = gcc

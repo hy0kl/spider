@@ -8,6 +8,14 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <netdb.h>
+#include <fcntl.h>
+#include <time.h>
+#include <assert.h>
+#include <signal.h>
+#include <errno.h>
+#include <err.h>
+#include <getopt.h>
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/queue.h>
@@ -20,14 +28,7 @@
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <arpa/inet.h>
-#include <netdb.h>
-#include <fcntl.h>
-#include <time.h>
-#include <assert.h>
-#include <signal.h>
-#include <errno.h>
-#include <err.h>
-#include <getopt.h>
+#include <openssl/md5.h>
 
 #include <lua.h>
 #include <lualib.h>

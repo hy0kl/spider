@@ -34,6 +34,8 @@
 #include <lualib.h>
 #include <lauxlib.h>
 
+#include <sqlite3.h>
+
 #define _DEBUG  1
 
 #define DEFAULT_PROXY_PATH          "./conf/proxy.txt"
@@ -90,6 +92,25 @@
 #define MAX_COOKIE_LEN      1024
 #define MAX_POSTDATA_LEN    1024 //http中，POST体的最大长度
 #define MAX_X_FLASH_VERSION_LEN 256
+/** spider request header buffer length */
+#define HTTP_HEADER_BUF_LEN 1024 * 4
+/** spider download content body buffer length */
+#define HTTP_BODY_BUF_LEN   1024 * 500
+
+/** 数据库相关 */
+#define SQL_BUF_LEN         1024 * 4
+#define DB_NAME_BUF_LEN     64
+#define DEFAULT_DB_NAME     "url.db"
+//#define DB_STRUCTURE_BUF_LEN    2048
+#define DEFAULT_DB_STRUCTURE    "CREATE TABLE IF NOT EXISTS \
+url_info(\
+    uid INTEGER PRIMARY KEY, \
+    url_md5 TEXT, \
+    url TEXT, \
+    content_md5 TEXT, \
+    time INTERER, \
+    deleted INTERER\
+);"
 
 #define SIGNO_END       111
 #define TMP_STR_BUF_LEN 1024 * 20
@@ -166,6 +187,7 @@ typedef struct _config_t
 {
     char prefix[FILENAME_MAX_LEN];  /** 程序工作的绝对路径,必须指定 */
     char log_name[FILENAME_MAX_LEN];    /** $prefix/log/spider.log */
+    char db_name[DB_NAME_BUF_LEN];  /** 数据库名字,可配置,但结构不提供配置 */
     int  log_level;
     int  log_size;
     int  do_daemonize;
@@ -185,7 +207,37 @@ typedef struct _config_t
     module_config_t module_config;
 } config_t;
 
+/** 下载线程空间数据 */
+typedef struct _download_thread_data_t
+{
+    char *http_header;
+    char *http_body;
+    char *sql;
+} download_thread_data_t;
+
+/** 抽取线程空间数据 */
+typedef struct _extract_thread_data_t
+{
+    char *str_buf;
+    char *sql;
+} extract_thread_data_t;
+
+typedef struct _global_variable_t
+{
+    /** 全局共用的数据库链接 */
+    sqlite3 *db;
+    /** 数据库写操作的互斥锁 */
+    pthread_mutex_t  db_mutex;
+
+    /** 任务队列 */
+    task_t   gtask_id;
+    task_queue_t    *task_queue_head;
+    task_queue_t    *task_queue_tail;
+    pthread_mutex_t  task_queue_mutex;
+} global_variable_t;
+
 extern config_t gconfig;
+extern global_variable_t g_vars;
 
 #endif
 

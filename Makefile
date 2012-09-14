@@ -1,6 +1,7 @@
 LIBDIR = \
 		-llua \
 		-lcrypto \
+		-lsqlite3 \
 		-lm
 
 GCC = gcc

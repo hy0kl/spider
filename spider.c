@@ -1,10 +1,13 @@
 #include "util.h"
 
-config_t gconfig;
+config_t          gconfig;
+global_variable_t g_vars;
+/*
 task_t   gtask_id = 0;
 task_queue_t    *task_queue_head = NULL;
 task_queue_t    *task_queue_tail = NULL;
 pthread_mutex_t  task_queue_mutex;
+*/
 
 static void usage(void)
 {
@@ -101,6 +104,13 @@ int init_config()
     }
     snprintf(gconfig.log_name, sizeof(gconfig.log_name), "%s%s", gconfig.prefix, s);
 
+    if (0 != get_field(L, "db_name", s, sizeof(s)))
+    {
+        fprintf(stderr, "get gconfig.db_name fail.\n");
+        snprintf(s, sizeof(s), "db/%s", DEFAULT_DB_NAME);
+    }
+    snprintf(gconfig.db_name, sizeof(gconfig.db_name), "%s%s", gconfig.prefix, s);
+
     if (0 != get_field(L, "log_level", &gconfig.log_level, sizeof(gconfig.log_level)))
     {
         fprintf(stderr, "get gconfig.log_level fail.\n");
@@ -175,6 +185,7 @@ void print_config()
     printf("---gconfig---\n");
     printf("prefix:   %s\n", gconfig.prefix);
     printf("log_name: %s\n", gconfig.log_name);
+    printf("db_name:  %s\n", gconfig.db_name);
     printf("log_level:%d\n", gconfig.log_level);
     printf("log_size: %d\n", gconfig.log_size);
     printf("do_daemonize:    %d\n", gconfig.do_daemonize);
@@ -213,7 +224,7 @@ int main(int argc, char *argv[])
     print_config();
 #endif
 
-    pthread_mutex_init(&task_queue_mutex, NULL);
+    pthread_mutex_init(&g_vars.task_queue_mutex, NULL);
 FINISH:
     return 0;
 }

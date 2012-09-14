@@ -1,5 +1,6 @@
 gconfig = {
     log_name = 'log/test.log',
+    db_name  = 'db/urls-info.db',
     log_level= 4,
     log_size = 102400,
     do_daemonize = 1,

@@ -94,8 +94,8 @@
 #define MAX_X_FLASH_VERSION_LEN 256
 /** spider request header buffer length */
 #define HTTP_HEADER_BUF_LEN 1024 * 4
-/** spider download content body buffer length */
-#define HTTP_BODY_BUF_LEN   1024 * 500
+/** spider download content body buffer length, include http header */
+#define HTTP_CONTENT_BUF_LEN    1024 * 500
 
 /** 数据库相关 */
 #define SQL_BUF_LEN         1024 * 4
@@ -212,14 +212,20 @@ typedef struct _download_thread_data_t
 {
     char *http_header;
     char *http_body;
-    char *sql;
+    // char *sql;
 } download_thread_data_t;
 
 /** 抽取线程空间数据 */
 typedef struct _extract_thread_data_t
 {
+    /** 工做者的缓冲区 */
     char *str_buf;
     char *sql;
+    /**
+     * 抽取线程由于各个站点的文档结构千差万别
+     * 所以需要使用 Lua 来适配
+     * */
+    lua_State *L;
 } extract_thread_data_t;
 
 typedef struct _global_variable_t
@@ -234,6 +240,10 @@ typedef struct _global_variable_t
     task_queue_t    *task_queue_head;
     task_queue_t    *task_queue_tail;
     pthread_mutex_t  task_queue_mutex;
+
+    /** 线程空间 */
+    download_thread_data_t dt_data;
+    extract_thread_data_t  et_data;
 } global_variable_t;
 
 extern config_t gconfig;

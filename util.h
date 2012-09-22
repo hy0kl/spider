@@ -36,9 +36,9 @@ int url_encode(char *str, int ext);
 int cut_str(const char *src,
             char *des,
             const size_t des_buf_len,
-            const char *charset,
+            const char  *charset,
             unsigned int length,
-            const char *suffix);
+            const char  *suffix);
 
 /**
  * 前缀与查询词比对

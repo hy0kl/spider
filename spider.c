@@ -20,7 +20,7 @@ static void usage(void)
     return;
 }
 
-int parse_args(int argc, char *argv[])
+static int parse_args(int argc, char *argv[])
 {
     int c = 0;
     int ret = 0;
@@ -69,7 +69,7 @@ int parse_args(int argc, char *argv[])
     return ret;
 }
 
-int init_config()
+static int init_config()
 {
     int ret = 0;
 
@@ -180,7 +180,7 @@ FINISH:
     return ret;
 }
 
-void print_config()
+static void print_config()
 {
     printf("---gconfig---\n");
     printf("prefix:   %s\n", gconfig.prefix);
@@ -196,6 +196,73 @@ void print_config()
     printf("module_config.cout:     %d\n", gconfig.module_config.count);
     printf("---end print gconfig---\n");
 
+    return;
+}
+
+static int init_thread()
+{
+    int ret = 0;
+    size_t size = 0;
+
+    /** init for download thread { */
+    size = sizeof(char) * HTTP_HEADER_BUF_LEN;
+    g_vars.dt_data.http_header = (char *)malloc(size);
+    if (NULL == g_vars.dt_data.http_header)
+    {
+        fprintf(stderr, "Can NOT malloc memory for \
+g_vars.dt_data.http_header, need size: %ld\n", size);
+        ret = -1;
+        goto FINISH;
+    }
+
+    size = sizeof(char) * HTTP_CONTENT_BUF_LEN;
+    g_vars.dt_data.http_body = (char *)malloc(size);
+    if (NULL == g_vars.dt_data.http_body)
+    {
+        fprintf(stderr, "Can NOT malloc memory for \
+g.vars.dt_data.http_body, need size: %ld\n", size);
+        ret = -1;
+        goto FINISH;
+    }
+    /** } */
+
+    /** init for extract thread { */
+    size = sizeof(char) * HTTP_CONTENT_BUF_LEN;
+    g_vars.et_data.str_buf = (char *)malloc(size);
+    if (NULL== g_vars.et_data.str_buf)
+    {
+        fprintf(stderr, "Can NOT malloc memory for \
+g.vars.et_data.str_buf, need size: %ld\n", size);
+        ret = -1;
+        goto FINISH;
+    }
+
+    size = sizeof(char) * SQL_BUF_LEN;
+    g_vars.et_data.sql = (char *)malloc(size);
+    if (NULL== g_vars.et_data.sql)
+    {
+        fprintf(stderr, "Can NOT malloc memory for \
+g.vars.et_data.sql, need size: %ld\n", size);
+        ret = -1;
+        goto FINISH;
+    }
+
+    /* opens Lua */
+    if (NULL == (g_vars.et_data.L = luaL_newstate()))
+    {
+        fprintf(stderr, "[Error]: Can NOT init Lua state for \
+g.vars.et_data.L\n");
+        ret = -1;
+        goto FINISH;
+    }
+    /** } */
+
+FINISH:
+    return ret;
+}
+
+static void free_memory(void)
+{
     return;
 }
 
@@ -224,8 +291,16 @@ int main(int argc, char *argv[])
     print_config();
 #endif
 
+    if (0 != init_thread())
+    {
+        fprintf(stderr, "init_thread() fail.\n");
+        goto FINISH;
+    }
+
     pthread_mutex_init(&g_vars.task_queue_mutex, NULL);
 FINISH:
+
+    free_memory();
     return 0;
 }
 

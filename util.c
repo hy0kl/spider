@@ -513,7 +513,7 @@ FINISH:
     return result;
 }
 
-int c_md5(const unsigned char *data, char *des_buf, const size_t des_size)
+int c_md5(const char *data, char *des_buf, const size_t des_size)
 {
     assert(NULL != data);
     assert(NULL != des_buf);
@@ -525,7 +525,7 @@ int c_md5(const unsigned char *data, char *des_buf, const size_t des_size)
     char tmp[3] = {0};
     char buf[33]= {0};
 
-    MD5(data, strlen(data), md);
+    MD5((const unsigned char *)data, strlen(data), md);
     for (i = 0; i < 16; i++){
         sprintf(tmp, "%2.2x", md[i]);
         strcat(buf, tmp);

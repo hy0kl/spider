@@ -56,7 +56,7 @@ void lua_ext_error(lua_State *L);
  * */
 int get_field(lua_State *L, const char *key, void *dest, const size_t size);
 
-int c_md5(const unsigned char *data, char *des_buf, const size_t des_size);
+int c_md5(const char *data, char *des_buf, const size_t des_size);
 
 #endif
 

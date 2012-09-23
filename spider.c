@@ -202,58 +202,86 @@ static void print_config()
 static int init_thread()
 {
     int ret = 0;
+    int thread_num = 0;
+    int i = 0;
     size_t size = 0;
 
+    thread_num = gconfig.download_thread_number;
     /** init for download thread { */
-    size = sizeof(char) * HTTP_HEADER_BUF_LEN;
-    g_vars.dt_data.http_header = (char *)malloc(size);
-    if (NULL == g_vars.dt_data.http_header)
+    size = sizeof(download_thread_data_t) * thread_num;
+    g_vars.dt_data = (download_thread_data_t *)malloc(size);
+    if (NULL == g_vars.dt_data)
     {
         fprintf(stderr, "Can NOT malloc memory for \
-g_vars.dt_data.http_header, need size: %ld\n", size);
-        ret = -1;
+g_vars.dt_data, need size: %ld\n", size);
+        ret = 1;
         goto FINISH;
     }
-
-    size = sizeof(char) * HTTP_CONTENT_BUF_LEN;
-    g_vars.dt_data.http_body = (char *)malloc(size);
-    if (NULL == g_vars.dt_data.http_body)
+    for (i = 0; i < thread_num; i++)
     {
-        fprintf(stderr, "Can NOT malloc memory for \
-g.vars.dt_data.http_body, need size: %ld\n", size);
-        ret = -1;
-        goto FINISH;
+        size = sizeof(char) * HTTP_HEADER_BUF_LEN;
+        g_vars.dt_data[i].http_header = (char *)malloc(size);
+        if (NULL == g_vars.dt_data[i].http_header)
+        {
+            fprintf(stderr, "Can NOT malloc memory for \
+g_vars.dt_data[%d].http_header, need size: %ld\n", i, size);
+            ret = -1;
+            goto FINISH;
+        }
+
+        size = sizeof(char) * HTTP_CONTENT_BUF_LEN;
+        g_vars.dt_data[i].http_body = (char *)malloc(size);
+        if (NULL == g_vars.dt_data[i].http_body)
+        {
+            fprintf(stderr, "Can NOT malloc memory for \
+g.vars.dt_data[%d].http_body, need size: %ld\n", i, size);
+            ret = -1;
+            goto FINISH;
+        }
     }
     /** } */
 
     /** init for extract thread { */
-    size = sizeof(char) * HTTP_CONTENT_BUF_LEN;
-    g_vars.et_data.str_buf = (char *)malloc(size);
-    if (NULL== g_vars.et_data.str_buf)
+    thread_num = gconfig.extract_thread_number;
+    size = sizeof(extract_thread_data_t) * thread_num;
+    g_vars.et_data = (extract_thread_data_t *)malloc(size);
+    if (NULL == g_vars.et_data)
     {
         fprintf(stderr, "Can NOT malloc memory for \
-g.vars.et_data.str_buf, need size: %ld\n", size);
-        ret = -1;
+g_vars.et_data, need size: %ld\n", size);
+        ret = 1;
         goto FINISH;
     }
-
-    size = sizeof(char) * SQL_BUF_LEN;
-    g_vars.et_data.sql = (char *)malloc(size);
-    if (NULL== g_vars.et_data.sql)
+    for (i = 0; i < thread_num; i++)
     {
-        fprintf(stderr, "Can NOT malloc memory for \
-g.vars.et_data.sql, need size: %ld\n", size);
-        ret = -1;
-        goto FINISH;
-    }
+        size = sizeof(char) * HTTP_CONTENT_BUF_LEN;
+        g_vars.et_data[i].str_buf = (char *)malloc(size);
+        if (NULL== g_vars.et_data[i].str_buf)
+        {
+            fprintf(stderr, "Can NOT malloc memory for \
+g.vars.et_data[%d].str_buf, need size: %ld\n", i, size);
+            ret = -1;
+            goto FINISH;
+        }
 
-    /* opens Lua */
-    if (NULL == (g_vars.et_data.L = luaL_newstate()))
-    {
-        fprintf(stderr, "[Error]: Can NOT init Lua state for \
-g.vars.et_data.L\n");
-        ret = -1;
-        goto FINISH;
+        size = sizeof(char) * SQL_BUF_LEN;
+        g_vars.et_data[i].sql = (char *)malloc(size);
+        if (NULL== g_vars.et_data[i].sql)
+        {
+            fprintf(stderr, "Can NOT malloc memory for \
+g.vars.et_data[%d].sql, need size: %ld\n", i, size);
+            ret = -1;
+            goto FINISH;
+        }
+
+        /* opens Lua */
+        if (NULL == (g_vars.et_data[i].L = luaL_newstate()))
+        {
+            fprintf(stderr, "[Error]: Can NOT init Lua state for \
+g.vars.et_data[i].L\n", i);
+            ret = -1;
+            goto FINISH;
+        }
     }
     /** } */
 
@@ -298,6 +326,7 @@ int main(int argc, char *argv[])
     }
 
     pthread_mutex_init(&g_vars.task_queue_mutex, NULL);
+    pthread_mutex_init(&g_vars.db_mutex, NULL);
 FINISH:
 
     free_memory();

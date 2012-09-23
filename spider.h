@@ -242,8 +242,8 @@ typedef struct _global_variable_t
     pthread_mutex_t  task_queue_mutex;
 
     /** 线程空间 */
-    download_thread_data_t dt_data;
-    extract_thread_data_t  et_data;
+    download_thread_data_t *dt_data;
+    extract_thread_data_t  *et_data;
 } global_variable_t;
 
 extern config_t gconfig;

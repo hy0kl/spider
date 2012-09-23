@@ -69,7 +69,7 @@ static int parse_args(int argc, char *argv[])
     return ret;
 }
 
-static int init_config()
+static int init_config(void)
 {
     int ret = 0;
 
@@ -180,7 +180,7 @@ FINISH:
     return ret;
 }
 
-static void print_config()
+static void print_config(void)
 {
     printf("---gconfig---\n");
     printf("prefix:   %s\n", gconfig.prefix);
@@ -199,7 +199,7 @@ static void print_config()
     return;
 }
 
-static int init_thread()
+static int init_thread(void)
 {
     int ret = 0;
     int thread_num = 0;
@@ -278,7 +278,7 @@ g.vars.et_data[%d].sql, need size: %ld\n", i, size);
         if (NULL == (g_vars.et_data[i].L = luaL_newstate()))
         {
             fprintf(stderr, "[Error]: Can NOT init Lua state for \
-g.vars.et_data[i].L\n", i);
+g.vars.et_data[%d].L\n", i);
             ret = -1;
             goto FINISH;
         }
@@ -286,6 +286,13 @@ g.vars.et_data[i].L\n", i);
     /** } */
 
 FINISH:
+    return ret;
+}
+
+static int init_task(void)
+{
+    int ret = 0;
+
     return ret;
 }
 
@@ -322,6 +329,12 @@ int main(int argc, char *argv[])
     if (0 != init_thread())
     {
         fprintf(stderr, "init_thread() fail.\n");
+        goto FINISH;
+    }
+
+    if (0 != init_task())
+    {
+        fprintf(stderr, "init_task() fail.\n");
         goto FINISH;
     }
 

@@ -76,7 +76,10 @@ static int init_config(void)
     char config_file[FILENAME_MAX_LEN];
 
     char  s[FILENAME_MAX_LEN];
+    char  key[8] = {0};
     int   d = 0;
+    int   i = 0;
+    size_t size = 0;
 
     lua_State *L = luaL_newstate(); /* opens Lua */
     luaL_openlibs(L);   /** Opens all standard Lua libraries into the given state. */
@@ -163,6 +166,16 @@ static int init_config(void)
         gconfig.url_density = 7.3;
     }
 
+    lua_pop(L, 1);
+    /** get module config */
+    lua_getglobal(L, "g_module_config");
+    if (! lua_istable(L, -1))
+    {
+        fprintf(stderr, "g_module_config is NOT table.\n");
+        ret = -1;
+        goto FINISH;
+    }
+
     if (0 != get_field(L, "module_count",
             &gconfig.module_config.count, sizeof(gconfig.module_config.count)))
     {
@@ -170,9 +183,85 @@ static int init_config(void)
         ret = -1;
         goto FINISH;
     }
+    //logprintf("gconfig.module_config.count = %d", gconfig.module_config.count);
+    /* malloc for module config
+     * init
+     * {
+     */
+    size = sizeof(char *) * gconfig.module_config.count;
+    gconfig.module_config.module_name = (char **)malloc(size);
+    if (NULL == gconfig.module_config.module_name)
+    {
+        fprintf(stderr, "can NOT malloc memory for \
+gconfig.module_config.module_name, need size: %ld\n", size);
+        ret = -1;
+        goto FINISH;
+    }
+    gconfig.module_config.entry_handle = (char **)malloc(size);
+    if (NULL == gconfig.module_config.entry_handle)
+    {
+        fprintf(stderr, "can NOT malloc memory for \
+gconfig.module_config.entry_handle, need size: %ld\n", size);
+        ret = -1;
+        goto FINISH;
+    }
+    gconfig.module_config.entry_url = (char **)malloc(size);
+    if (NULL == gconfig.module_config.entry_url)
+    {
+        fprintf(stderr, "can NOT malloc memory for \
+gconfig.module_config.entry_url, need size: %ld\n", size);
+        ret = -1;
+        goto FINISH;
+    }
 
-    /** get module_array */
-    // TODO
+    for (i = 0; i < gconfig.module_config.count; i++)
+    {
+        size = sizeof(char) * FILENAME_MAX_LEN;
+        if (NULL == (gconfig.module_config.module_name[i] = (char *)malloc(size)))
+        {
+            fprintf(stderr, "can NOT malloc memory for \
+gconfig.module_config.module_name[%d], need size: %ld\n", i, size);
+            ret = -1;
+            goto FINISH;
+        }
+        gconfig.module_config.module_name[i][0] = '\0';
+        if (NULL == (gconfig.module_config.entry_handle[i] = (char *)malloc(size)))
+        {
+            fprintf(stderr, "can NOT malloc memory for \
+gconfig.module_config.entry_handle[%d], need size: %ld\n", i, size);
+            ret = -1;
+            goto FINISH;
+        }
+        gconfig.module_config.entry_handle[i][0] = '\0';
+
+        size = sizeof(char) * MAX_URL_LEN;
+        if (NULL == (gconfig.module_config.entry_url[i] = (char *)malloc(size)))
+        {
+            fprintf(stderr, "can NOT malloc memory for \
+gconfig.module_config.entry_url[%d], need size: %ld\n", i, size);
+            ret = -1;
+            goto FINISH;
+        }
+        gconfig.module_config.entry_url[i][0] = '\0';
+
+        /** can NOT work and finding idea.
+        lua_pushstring(L, "module_name");
+        lua_gettable(L, -2);
+        snprintf(key, sizeof(key), "%d", i + 1);
+        if (0 != get_field(L, key, s, sizeof(s)))
+        {
+            fprintf(stderr, "get gconfig.module_config.module_name[%s].\n", key);
+            s[0] = '\0';
+        }
+        snprintf(gconfig.module_config.module_name[i], FILENAME_MAX_LEN, "%s", s);
+        logprintf("gconfig.module_config.module_name[%d] = [%s]", i, s);
+
+        lua_pop(L, 1);
+        */
+    }
+    /**
+     * }
+     * */
 
 FINISH:
     lua_close(L);

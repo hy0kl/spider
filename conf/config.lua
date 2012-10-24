@@ -8,10 +8,20 @@ gconfig = {
     download_thread_number = 2,
     extract_thread_number  = 4,
     url_density = 23,
-    module_count = 2;
 };
 
-g_module_name  = {
-    'ganji',
-    '58'
+g_module_config = {
+    module_count = 2,
+    module_name  = {
+        'ganji',
+        '58'
+    },
+    entry_url = {
+        'http://bj.ganji.com/',
+        'http://bj.58.com/',
+    },
+    entry_handle = {
+        'common_parse',
+        'common_parse',
+    },
 };

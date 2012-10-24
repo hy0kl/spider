@@ -180,7 +180,9 @@ typedef struct _module_callback_t
 typedef struct _module_config_t
 {
     short  count;
-    char **module_array;
+    char **module_name; // FILENAME_MAX_LEN
+    char **entry_url;   // MAX_URL_LEN
+    char **entry_handle;    // FILENAME_MAX_LEN
 } module_config_t;
 
 typedef struct _config_t

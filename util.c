@@ -507,7 +507,7 @@ int get_field(lua_State *L, const char *key, void *dest, const size_t size)
     }
 
     lua_pop(L, 1);
-     result = 0;
+    result = 0;
 
 FINISH:
     return result;

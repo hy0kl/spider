@@ -13,15 +13,15 @@ gconfig = {
 g_module_config = {
     module_count = 2,
     module_name  = {
-        'ganji',
-        '58'
+        ['0'] = 'ganji',
+        ['1'] = '58'
     },
     entry_url = {
-        'http://bj.ganji.com/',
-        'http://bj.58.com/',
+        ['0'] = 'http://bj.ganji.com/',
+        ['1'] = 'http://bj.58.com/',
     },
     entry_handle = {
-        'common_parse',
-        'common_parse',
+        ['0'] = 'common_parse',
+        ['1'] = 'common_parse',
     },
 };

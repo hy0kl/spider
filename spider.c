@@ -244,10 +244,10 @@ gconfig.module_config.entry_url[%d], need size: %ld\n", i, size);
         }
         gconfig.module_config.entry_url[i][0] = '\0';
 
-        /** can NOT work and finding idea.
+        /** module_name */
         lua_pushstring(L, "module_name");
         lua_gettable(L, -2);
-        snprintf(key, sizeof(key), "%d", i + 1);
+        snprintf(key, sizeof(key), "%d", i);
         if (0 != get_field(L, key, s, sizeof(s)))
         {
             fprintf(stderr, "get gconfig.module_config.module_name[%s].\n", key);
@@ -255,9 +255,33 @@ gconfig.module_config.entry_url[%d], need size: %ld\n", i, size);
         }
         snprintf(gconfig.module_config.module_name[i], FILENAME_MAX_LEN, "%s", s);
         logprintf("gconfig.module_config.module_name[%d] = [%s]", i, s);
-
         lua_pop(L, 1);
-        */
+
+        /** entry_url */
+        lua_pushstring(L, "entry_url");
+        lua_gettable(L, -2);
+        snprintf(key, sizeof(key), "%d", i);
+        if (0 != get_field(L, key, s, sizeof(s)))
+        {
+            fprintf(stderr, "get gconfig.module_config.module_name[%s].\n", key);
+            s[0] = '\0';
+        }
+        snprintf(gconfig.module_config.entry_url[i], MAX_URL_LEN, "%s", s);
+        logprintf("gconfig.module_config.entry_url[%d] = [%s]", i, s);
+        lua_pop(L, 1);
+
+        /** entry_handle */
+        lua_pushstring(L, "entry_handle");
+        lua_gettable(L, -2);
+        snprintf(key, sizeof(key), "%d", i);
+        if (0 != get_field(L, key, s, sizeof(s)))
+        {
+            fprintf(stderr, "get gconfig.module_config.entry_handle[%s].\n", key);
+            s[0] = '\0';
+        }
+        snprintf(gconfig.module_config.entry_handle[i], FILENAME_MAX_LEN, "%s", s);
+        logprintf("gconfig.module_config.entry_handle[%d] = [%s]", i, s);
+        lua_pop(L, 1);
     }
     /**
      * }
@@ -271,6 +295,7 @@ FINISH:
 
 static void print_config(void)
 {
+    int i = 0;
     printf("---gconfig---\n");
     printf("prefix:   %s\n", gconfig.prefix);
     printf("log_name: %s\n", gconfig.log_name);
@@ -282,7 +307,16 @@ static void print_config(void)
     printf("download_thread_number: %d\n", gconfig.download_thread_number);
     printf("extract_thread_number:  %d\n", gconfig.extract_thread_number);
     printf("url_density:            %f\n", gconfig.url_density);
+
     printf("module_config.cout:     %d\n", gconfig.module_config.count);
+    for (i = 0; i < gconfig.module_config.count; i++)
+    {
+        printf("    >---<\n");
+        printf("    module_name[%d]: %s\n", i, gconfig.module_config.module_name[i]);
+        printf("    entry_url[%d]:   %s\n", i, gconfig.module_config.entry_url[i]);
+        printf("    entry_handle[%d]:%s\n", i, gconfig.module_config.entry_handle[i]);
+    }
+
     printf("---end print gconfig---\n");
 
     return;

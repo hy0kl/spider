@@ -474,10 +474,39 @@ FINISH:
     return ret;
 }
 
+static task_t get_new_tid(void)
+{
+    task_t tid = 0;
+
+    while (0 != pthread_mutex_lock(&g_vars.tid_mutex))
+    {;}
+    g_vars.gtask_id++;
+    tid = g_vars.gtask_id;
+    pthread_mutex_unlock(&g_vars.tid_mutex);
+
+    return tid;
+}
+
 static int init_task(void)
 {
     int ret = 0;
+    int i   = 0;
+    task_t tid  = 0;
+    size_t size = 0;
+    task_queue_t *task_queue = NULL;
 
+    for (i = 0; i < gconfig.module_config.count; i++)
+    {
+        tid = get_new_tid();
+        logprintf("tid = %ld", tid);
+        size= sizeof(task_queue_t);
+        if (NULL == (task_queue = (task_queue_t *)malloc(size)))
+        {
+            ;
+        }
+    }
+
+FINISH:
     return ret;
 }
 
@@ -528,16 +557,16 @@ int main(int argc, char *argv[])
         goto FINISH;
     }
 
+    pthread_mutex_init(&g_vars.d_tq_mutex, NULL);
+    pthread_mutex_init(&g_vars.e_tq_mutex, NULL);
+    pthread_mutex_init(&g_vars.tid_mutex,  NULL);
+    pthread_mutex_init(&g_vars.db_mutex,   NULL);
+
     if (0 != init_task())
     {
         fprintf(stderr, "init_task() fail.\n");
         goto FINISH;
     }
-
-    pthread_mutex_init(&g_vars.d_tq_mutex, NULL);
-    pthread_mutex_init(&g_vars.e_tq_mutex, NULL);
-    pthread_mutex_init(&g_vars.tid_mutex,  NULL);
-    pthread_mutex_init(&g_vars.db_mutex,   NULL);
 
 FINISH:
 

@@ -502,8 +502,21 @@ static int init_task(void)
         size= sizeof(task_queue_t);
         if (NULL == (task_queue = (task_queue_t *)malloc(size)))
         {
-            ;
+            fprintf(stderr, "can NOT malloc memory for task_queue, need size: %ld\n", size);
+            ret = -1;
+            goto FINISH;
         }
+
+        task_queue->next = NULL;
+
+        task_queue->task_id = tid;
+        task_queue->task_pid= 0;
+        task_queue->http_version = 1;
+        task_queue->method       = 0;
+        task_queue->media_type   = 0;
+        task_queue->extract_type = 0;
+        snprintf(task_queue->url, MAX_URL_LEN, "%s", g_vars.module_config.entry_url[i]);
+        snprintf(task_queue->module_name, FILENAME_MAX_LEN, "%s", g_vars.module_config.module_name[i]);
     }
 
 FINISH:

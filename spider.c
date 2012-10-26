@@ -293,6 +293,57 @@ FINISH:
     return ret;
 }
 
+static int init_g_vars(void)
+{
+    int ret = 0;
+    char *zTail;
+    char  sql[SQL_BUF_LEN] = {0};
+
+    /** 打开数据库 */
+    int r = sqlite3_open(gconfig.db_name, &(g_vars.db));
+    if (r)
+    {
+        fprintf(stderr, "[Error]: %s\n", sqlite3_errmsg(g_vars.db));
+        ret = SQLITE_ERROR;
+        goto FINISH;
+    }
+#if (_DEBUG)
+    else
+    {
+        fprintf(stderr, "You have opened a sqlite3 database named %s successfully!\n\
+Congratulations! Have fun ! ^-^ \n", gconfig.db_name);
+    }
+#endif
+    /** 初始化数据库 */
+    snprintf(sql, sizeof(sql), DEFAULT_DB_STRUCTURE);
+    r = sqlite3_exec(g_vars.db, sql, NULL, NULL, &zTail);
+    if (r)
+    {
+        fprintf(stderr, "[Error]: %s\n", zTail);
+        ret = -1;
+        goto FINISH;
+    }
+#if (_DEBUG)
+    else
+    {
+        fprintf(stderr, "init db success.\n");
+    }
+#endif
+
+    g_vars.gtask_id = 0;
+
+    g_vars.d_tq_head = NULL;
+    g_vars.d_tq_tail = NULL;
+    g_vars.e_tq_head = NULL;
+    g_vars.e_tq_tail = NULL;
+
+    g_vars.dt_data = NULL;
+    g_vars.et_data = NULL;
+
+FINISH:
+    return ret;
+}
+
 static void print_config(void)
 {
     int i = 0;
@@ -361,6 +412,17 @@ g.vars.dt_data[%d].http_body, need size: %ld\n", i, size);
             ret = -1;
             goto FINISH;
         }
+
+        size = sizeof(char) * SQL_BUF_LEN;
+        g_vars.dt_data[i].d_sql = (char *)malloc(size);
+        if (NULL== g_vars.dt_data[i].d_sql)
+        {
+            fprintf(stderr, "Can NOT malloc memory for \
+g.vars.dt_data[%d].d_sql, need size: %ld\n", i, size);
+            ret = -1;
+            goto FINISH;
+        }
+
     }
     /** } */
 
@@ -388,8 +450,8 @@ g.vars.et_data[%d].str_buf, need size: %ld\n", i, size);
         }
 
         size = sizeof(char) * SQL_BUF_LEN;
-        g_vars.et_data[i].sql = (char *)malloc(size);
-        if (NULL== g_vars.et_data[i].sql)
+        g_vars.et_data[i].e_sql = (char *)malloc(size);
+        if (NULL== g_vars.et_data[i].e_sql)
         {
             fprintf(stderr, "Can NOT malloc memory for \
 g.vars.et_data[%d].sql, need size: %ld\n", i, size);
@@ -421,6 +483,11 @@ static int init_task(void)
 
 static void free_memory(void)
 {
+    if (g_vars.db)
+    {
+        sqlite3_close(g_vars.db);
+    }
+
     return;
 }
 
@@ -432,7 +499,7 @@ int main(int argc, char *argv[])
     pthread_t *pt_extract_core  = NULL;
     */
 
-    // signal_setup();
+    //signal_setup();
 
     if (0 != parse_args(argc, argv))
     {
@@ -449,6 +516,12 @@ int main(int argc, char *argv[])
     print_config();
 #endif
 
+    if (0 != init_g_vars())
+    {
+        fprintf(stderr, "init_g_vars() fail.\n");
+        goto FINISH;
+    }
+
     if (0 != init_thread())
     {
         fprintf(stderr, "init_thread() fail.\n");
@@ -461,8 +534,11 @@ int main(int argc, char *argv[])
         goto FINISH;
     }
 
-    pthread_mutex_init(&g_vars.task_queue_mutex, NULL);
-    pthread_mutex_init(&g_vars.db_mutex, NULL);
+    pthread_mutex_init(&g_vars.d_tq_mutex, NULL);
+    pthread_mutex_init(&g_vars.e_tq_mutex, NULL);
+    pthread_mutex_init(&g_vars.tid_mutex,  NULL);
+    pthread_mutex_init(&g_vars.db_mutex,   NULL);
+
 FINISH:
 
     free_memory();

@@ -107,6 +107,8 @@ url_info(\
     uid INTEGER PRIMARY KEY, \
     url_md5 TEXT, \
     url TEXT, \
+    tid INTERER, \
+    pid INTERER, \
     content_md5 TEXT, \
     time INTERER, \
     deleted INTERER\
@@ -141,9 +143,7 @@ typedef struct _task_queue_t
     char cookie[MAX_COOKIE_LEN];
     char referer[MAX_URL_LEN];
     char post_data[MAX_POSTDATA_LEN];
-
-    int module;
-    int callback_index;
+    char module_name[FILENAME_MAX_LEN];
 
     /**
      * 抓取内容的类型
@@ -168,14 +168,6 @@ typedef struct _argument_t
 {
     int tindex;
 } argument_t;
-
-typedef int (*callback_t)(task_queue_t *);
-typedef struct _module_callback_t
-{
-    char       *module_name;
-    short       count;
-    callback_t *callback;
-} module_callback_t;
 
 typedef struct _module_config_t
 {
@@ -214,7 +206,7 @@ typedef struct _download_thread_data_t
 {
     char *http_header;
     char *http_body;
-    // char *sql;
+    char *d_sql;
 } download_thread_data_t;
 
 /** 抽取线程空间数据 */
@@ -222,7 +214,7 @@ typedef struct _extract_thread_data_t
 {
     /** 工做者的缓冲区 */
     char *str_buf;
-    char *sql;
+    char *e_sql;
     /**
      * 抽取线程由于各个站点的文档结构千差万别
      * 所以需要使用 Lua 来适配
@@ -239,9 +231,17 @@ typedef struct _global_variable_t
 
     /** 任务队列 */
     task_t   gtask_id;
-    task_queue_t    *task_queue_head;
-    task_queue_t    *task_queue_tail;
-    pthread_mutex_t  task_queue_mutex;
+    pthread_mutex_t  tid_mutex;
+
+    /** 下载队列 */
+    task_queue_t    *d_tq_head;
+    task_queue_t    *d_tq_tail;
+    pthread_mutex_t  d_tq_mutex;
+
+    /** 解析队列 */
+    task_queue_t    *e_tq_head;
+    task_queue_t    *e_tq_tail;
+    pthread_mutex_t  e_tq_mutex;
 
     /** 线程空间 */
     download_thread_data_t *dt_data;

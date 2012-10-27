@@ -479,12 +479,41 @@ static task_t get_new_tid(void)
     task_t tid = 0;
 
     while (0 != pthread_mutex_lock(&g_vars.tid_mutex))
-    {;}
+    {
+        ;
+    }
     g_vars.gtask_id++;
     tid = g_vars.gtask_id;
     pthread_mutex_unlock(&g_vars.tid_mutex);
 
     return tid;
+}
+
+static int download_task_queue_push(task_queue_t *task_queue)
+{
+    assert(NULL != task_queue);
+    int ret = 0;
+
+    while (pthread_mutex_lock(&(g_vars.d_tq_mutex)))
+    {
+        ;
+    }
+    if (NULL == g_vars.d_tq_head && NULL == g_vars.d_tq_tail)
+    {
+        g_vars.d_tq_head = g_vars.d_tq_tail = task_queue;
+    }
+    else if (NULL != g_vars.d_tq_tail)
+    {
+        g_vars.d_tq_tail->next = task_queue;
+    }
+    else
+    {
+        ret = -1;
+        logprintf("Error: push task.");
+    }
+    pthread_mutex_unlock(&g_vars.d_tq_mutex);
+
+    return ret;
 }
 
 static int init_task(void)
@@ -515,8 +544,18 @@ static int init_task(void)
         task_queue->method       = 0;
         task_queue->media_type   = 0;
         task_queue->extract_type = 0;
-        snprintf(task_queue->url, MAX_URL_LEN, "%s", g_vars.module_config.entry_url[i]);
-        snprintf(task_queue->module_name, FILENAME_MAX_LEN, "%s", g_vars.module_config.module_name[i]);
+
+        task_queue->cookie[0]    = '\0';
+        task_queue->referer[0]   = '\0';
+        task_queue->post_data[0] = '\0';
+
+        snprintf(task_queue->url, MAX_URL_LEN, "%s", gconfig.module_config.entry_url[i]);
+        snprintf(task_queue->module_name, FILENAME_MAX_LEN, "%s", gconfig.module_config.module_name[i]);
+
+        if (0 != (ret = download_task_queue_push(task_queue)))
+        {
+            goto FINISH;
+        }
     }
 
 FINISH:

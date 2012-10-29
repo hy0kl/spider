@@ -489,6 +489,21 @@ static task_t get_new_tid(void)
     return tid;
 }
 
+static int extract_task_queue_push(task_queue_t *task_queue)
+{
+    assert(NULL != task_queue);
+    int ret = 0;
+
+    return ret;
+}
+
+static int extract_task_queue_pop(task_queue_t *task_queue)
+{
+    int ret = 0;
+
+    return ret;
+}
+
 static int download_task_queue_push(task_queue_t *task_queue)
 {
     assert(NULL != task_queue);
@@ -514,6 +529,23 @@ static int download_task_queue_push(task_queue_t *task_queue)
     pthread_mutex_unlock(&g_vars.d_tq_mutex);
 
     return ret;
+}
+
+static int download_task_queue_pop(task_queue_t *task_queue)
+{
+    int ret = 0;
+
+    return ret;
+}
+
+static void *download_work(void *arg)
+{
+    return NULL;
+}
+
+static void *extract_work(void *arg)
+{
+    return NULL;
 }
 
 static int init_task(void)

@@ -524,7 +524,7 @@ static int download_task_queue_push(task_queue_t *task_queue)
     else
     {
         ret = -1;
-        logprintf("Error: push task.");
+        logprintf("Error: push download task.");
     }
     pthread_mutex_unlock(&g_vars.d_tq_mutex);
 
@@ -540,11 +540,25 @@ static int download_task_queue_pop(task_queue_t *task_queue)
 
 static void *download_work(void *arg)
 {
+    argument_t *t_arg = (argument_t *)arg;
+    while (1)
+    {
+        logprintf("I am download_work %u", t_arg->tindex);
+        sleep(5);
+    }
+
     return NULL;
 }
 
 static void *extract_work(void *arg)
 {
+    argument_t *t_arg = (argument_t *)arg;
+    while (1)
+    {
+        logprintf("I am extract_work %u", t_arg->tindex);
+        sleep(5);
+    }
+
     return NULL;
 }
 
@@ -606,14 +620,6 @@ static void free_memory(void)
 
 int main(int argc, char *argv[])
 {
-    /**
-    argument_t *thread_args = NULL;
-    pthread_t *pt_download_core = NULL;
-    pthread_t *pt_extract_core  = NULL;
-    */
-
-    //signal_setup();
-
     if (0 != parse_args(argc, argv))
     {
         fprintf(stderr, "parse args fail.\n");
@@ -635,6 +641,9 @@ int main(int argc, char *argv[])
         goto FINISH;
     }
 
+    /** setup signal */
+    //signal_setup();
+
     if (0 != init_thread())
     {
         fprintf(stderr, "init_thread() fail.\n");
@@ -650,6 +659,86 @@ int main(int argc, char *argv[])
     {
         fprintf(stderr, "init_task() fail.\n");
         goto FINISH;
+    }
+
+    /** thread logic */
+    size_t size;
+    int    i = 0;
+    argument_t *d_arg = NULL;
+    argument_t *e_arg = NULL;
+
+    /** downloaded */
+    size = sizeof(argument_t) * gconfig.download_thread_number;
+    d_arg = (argument_t *)malloc(size);
+    if (NULL == d_arg)
+    {
+        fprintf(stderr, "can NOT malloc memory for \
+downloaded thread arguments, need size: %ld\n", size);
+        goto FINISH;
+    }
+    memset(d_arg, 0, size);
+    /** extract */
+    size = sizeof(argument_t) * gconfig.extract_thread_number;
+    e_arg = (argument_t *)malloc(size);
+    if (NULL == d_arg)
+    {
+        fprintf(stderr, "can NOT malloc memory for \
+extract thread arguments, need size: %ld\n", size);
+        goto FINISH;
+    }
+    memset(e_arg, 0, size);
+
+    int ret;
+    pthread_t *pt_download_core = NULL;
+    pthread_t *pt_extract_core  = NULL;
+
+    /** download */
+    size = sizeof(pthread_t) * gconfig.download_thread_number;
+    pt_download_core = (pthread_t *)malloc(size);
+    if (NULL == pt_download_core)
+    {
+        fprintf(stderr, "can NOT malloc memory for \
+pt_download_core, need size: %ld\n", size);
+        goto FINISH;
+    }
+    for (i = 0; i < gconfig.download_thread_number; i++)
+    {
+        d_arg[i].tindex = i;
+        ret = pthread_create(&pt_download_core[i], NULL, download_work, (void *)&(d_arg[i]));
+        if ( 0 != ret )
+        {
+            fprintf(stdout, "create the %dth download_work thread fail, exit.\n", i);
+            goto FINISH;
+        }
+    }
+    /** extract */
+    size = sizeof(pthread_t) * gconfig.extract_thread_number;
+    pt_extract_core = (pthread_t *)malloc(size);
+    if (NULL == pt_extract_core)
+    {
+        fprintf(stderr, "can NOT malloc memory for \
+pt_extract_core, need size: %ld\n", size);
+        goto FINISH;
+    }
+    for (i = 0; i < gconfig.extract_thread_number; i++)
+    {
+        e_arg[i].tindex = i;
+        ret = pthread_create(&pt_extract_core[i], NULL, extract_work, (void *)&(e_arg[i]));
+        if ( 0 != ret )
+        {
+            fprintf(stdout, "create the %dth extract_work thread fail, exit.\n", i);
+            goto FINISH;
+        }
+    }
+
+    /** join threads */
+    for (i = 0; i < gconfig.extract_thread_number; i++)
+    {
+        pthread_join(pt_extract_core[i], NULL);
+    }
+    for (i = 0; i < gconfig.download_thread_number; i++)
+    {
+        pthread_join(pt_download_core[i], NULL);
     }
 
 FINISH:
